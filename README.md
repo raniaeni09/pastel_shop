@@ -4,7 +4,7 @@ Aplikasi katalog produk mobile (Flutter) bertema warna pastel. Data produk diamb
 
 ## 🎥 Video Penjelasan & Demo
 
-**Link YouTube:** (https://youtu.be/N9JYka_U-Cw?si=Gg5u1WIQkLVVXJqg)
+**Link YouTube:** (https://youtu.be/1ycVaUo1S-k?si=WT6LAaGxiOrikjvN)
 
 ## ✨ Fitur
 
