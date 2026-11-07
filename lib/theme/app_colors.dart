@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const background = Color(0xFFD6EAF8); // krem lembut
+  static const background = Color.fromARGB(255, 253, 201, 230); // krem lembut
   static const surface = Colors.white;
   static const textDark = Color(0xFF4A4458);
   static const textSoft = Color(0xFF8E889C);

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
+import '../services/product_service.dart';
 import '../theme/app_colors.dart';
+import 'product_form_screen.dart';
 
 class DetailScreen extends StatefulWidget {
   final Product product;
@@ -14,9 +16,72 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> {
+  final _service = ProductService();
+  late Product _product = widget.product;
   int _page = 0;
+  bool _deleting = false;
 
-  Product get p => widget.product;
+  Product get p => _product;
+
+  Future<void> _edit() async {
+    final updated = await Navigator.of(context).push<Product>(
+      MaterialPageRoute(builder: (_) => ProductFormScreen(product: _product)),
+    );
+    if (updated == null || !mounted) return;
+    setState(() {
+      _product = updated;
+      _page = 0; // galeri dibangun ulang setelah edit
+    });
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(
+        content: Text('Perubahan disimpan'),
+        behavior: SnackBarBehavior.floating,
+      ));
+  }
+
+  Future<void> _delete() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('Hapus produk?'),
+        content: Text('"${p.title}" akan dihapus permanen.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFE57373)),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _deleting = true);
+    try {
+      await _service.deleteProduct(p.id);
+      if (!mounted) return;
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          content: Text('"${p.title}" dihapus'),
+          behavior: SnackBarBehavior.floating,
+        ));
+      Navigator.of(context).pop();
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _deleting = false);
+      messenger.showSnackBar(SnackBar(
+          content: Text(e.message), behavior: SnackBarBehavior.floating));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,6 +138,7 @@ class _DetailScreenState extends State<DetailScreen> {
               top: 40,
               bottom: 28,
               child: PageView.builder(
+                key: ValueKey(p.images.join('|')),
                 itemCount: p.images.length,
                 onPageChanged: (i) => setState(() => _page = i),
                 itemBuilder: (context, i) {
@@ -102,6 +168,30 @@ class _DetailScreenState extends State<DetailScreen> {
               child: _CircleButton(
                 icon: Icons.arrow_back_ios_new_rounded,
                 onTap: () => Navigator.of(context).pop(),
+              ),
+            ),
+            Positioned(
+              right: 12,
+              top: 8,
+              child: Row(
+                children: [
+                  _CircleButton(icon: Icons.edit_rounded, onTap: _edit),
+                  const SizedBox(width: 8),
+                  _deleting
+                      ? const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.accentDark),
+                          ),
+                        )
+                      : _CircleButton(
+                          icon: Icons.delete_outline_rounded,
+                          onTap: _delete,
+                        ),
+                ],
               ),
             ),
             if (p.images.length > 1)

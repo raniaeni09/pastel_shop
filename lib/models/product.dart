@@ -61,6 +61,22 @@ class Product {
 
   bool get hasDiscount => discountPercentage > 0;
 
+  /// Body untuk create/update. `reviews` & `rating` tidak dikirim: dikelola server.
+  Map<String, dynamic> toJson() => {
+        'title': title,
+        'description': description,
+        'category': category,
+        'price': price,
+        'discountPercentage': discountPercentage,
+        'stock': stock,
+        'brand': brand,
+        'thumbnail': thumbnail,
+        'images': images,
+        'shippingInformation': shippingInformation,
+        'warrantyInformation': warrantyInformation,
+        'returnPolicy': returnPolicy,
+      };
+
   factory Product.fromJson(Map<String, dynamic> json) {
     final images = (json['images'] as List?)?.cast<String>() ?? <String>[];
     final thumbnail = json['thumbnail'] as String? ?? '';

@@ -8,17 +8,24 @@ class ProductCard extends StatelessWidget {
   final Product product;
   final int index;
 
-  const ProductCard({super.key, required this.product, required this.index});
+  /// Dipanggil setelah kembali dari halaman detail (data mungkin berubah).
+  final VoidCallback? onReturn;
+
+  const ProductCard(
+      {super.key, required this.product, required this.index, this.onReturn});
 
   @override
   Widget build(BuildContext context) {
     final bg = AppColors.cardColor(index);
     return GestureDetector(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => DetailScreen(product: product, color: bg),
-        ),
-      ),
+      onTap: () async {
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => DetailScreen(product: product, color: bg),
+          ),
+        );
+        onReturn?.call();
+      },
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.surface,

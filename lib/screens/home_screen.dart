@@ -4,6 +4,7 @@ import '../models/product.dart';
 import '../services/product_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/product_card.dart';
+import 'product_form_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,9 +36,11 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _load({String query = ''}) async {
+  /// [silent] = true: muat ulang di belakang layar tanpa spinner
+  /// (dipakai setelah kembali dari detail/form).
+  Future<void> _load({String query = '', bool silent = false}) async {
     setState(() {
-      _loading = true;
+      if (!silent) _loading = true;
       _error = null;
       _activeQuery = query.trim();
     });
@@ -51,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = 'Gagal memuat produk.\nPeriksa koneksi internet kamu.';
+        _error = e is ApiException ? e.message : 'Gagal memuat produk.';
         _loading = false;
       });
     }
@@ -60,6 +63,20 @@ class _HomeScreenState extends State<HomeScreen> {
   void _submitSearch() {
     _focus.unfocus();
     _load(query: _controller.text);
+  }
+
+  Future<void> _addProduct() async {
+    final created = await Navigator.of(context).push<Product>(
+      MaterialPageRoute(builder: (_) => const ProductFormScreen()),
+    );
+    if (created == null || !mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        content: Text('"${created.title}" ditambahkan'),
+        behavior: SnackBarBehavior.floating,
+      ));
+    _load(query: _activeQuery, silent: true);
   }
 
   void _clearSearch() {
@@ -71,6 +88,14 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addProduct,
+        backgroundColor: AppColors.accentDark,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Tambah',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,6 +231,15 @@ class _HomeScreenState extends State<HomeScreen> {
         onAction: () => _load(query: _activeQuery),
       );
     }
+    if (_products.isEmpty && _activeQuery.isEmpty) {
+      return _Message(
+        icon: Icons.inventory_2_outlined,
+        color: AppColors.mint,
+        text: 'Belum ada produk.\nYuk tambahkan produk pertamamu!',
+        actionLabel: 'Tambah produk',
+        onAction: _addProduct,
+      );
+    }
     if (_products.isEmpty) {
       return _Message(
         icon: Icons.search_off_rounded,
@@ -219,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
       color: AppColors.accentDark,
       onRefresh: () => _load(query: _activeQuery),
       child: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 96),
         physics: const AlwaysScrollableScrollPhysics(),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
@@ -229,7 +263,11 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         itemCount: _products.length,
         itemBuilder: (context, i) =>
-            ProductCard(product: _products[i], index: i),
+            ProductCard(
+          product: _products[i],
+          index: i,
+          onReturn: () => _load(query: _activeQuery, silent: true),
+        ),
       ),
     );
   }

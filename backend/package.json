@@ -1,0 +1,11 @@
+{
+  "name": "pastel-shop-backend",
+  "version": "1.0.0",
+  "description": "Backend REST API sederhana untuk Pastel Shop (tanpa dependensi).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "reset": "node -e \"require('fs').rmSync('data',{recursive:true,force:true})\""
+  },
+  "engines": { "node": ">=18" }
+}
